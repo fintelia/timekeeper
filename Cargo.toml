@@ -1,6 +1,6 @@
 [package]
 name = "timekeeper"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jonathan Behrens <fintelia@gmail.com>"]
 description = "A simple library to track how much time is used in different parts of a program"
 repository = "https://github.com/fintelia/timekeeper"

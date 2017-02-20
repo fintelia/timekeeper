@@ -3,7 +3,9 @@
 
 use std::time;
 
-pub mod simpletimer;
+mod simpletimer;
+
+pub use simpletimer::SimpleTimer;
 
 pub trait Timer {
     /// Start timing. Panics if the timer is already running.

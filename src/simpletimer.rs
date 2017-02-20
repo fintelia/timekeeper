@@ -7,8 +7,8 @@ pub struct SimpleTimer {
     elapsed: time::Duration,
 }
 
-impl SimpleTimer {
-    pub fn new() -> Self {
+impl Default for SimpleTimer {
+    fn default() -> Self {
         Self {
             start: None,
             elapsed: time::Duration::from_secs(0),
@@ -17,14 +17,14 @@ impl SimpleTimer {
 }
 
 impl Timer for SimpleTimer {
-    fn start(&mut self) {
+    fn start_at(&mut self, instant: time::Instant) {
         assert!(self.start.is_none(), "Cannot start running timer");
-        self.start = Some(time::Instant::now());
+        self.start = Some(instant);
     }
 
-    fn stop(&mut self) {
+    fn stop_at(&mut self, instant: time::Instant) {
         assert!(self.start.is_some(), "Cannot stop paused timer");
-        self.elapsed += self.start.unwrap().elapsed();
+        self.elapsed += instant.duration_since(self.start.unwrap());
         self.start = None;
     }
 
@@ -40,7 +40,7 @@ impl Timer for SimpleTimer {
 fn it_works() {
     use std::thread::sleep;
 
-    let mut t = SimpleTimer::new();
+    let mut t = SimpleTimer::default();
     assert_eq!(t.num_nanoseconds(), 0);
 
     t.start();

@@ -1,0 +1,6 @@
+[package]
+name = "timekeeper"
+version = "0.1.0"
+authors = ["Jonathan Behrens <behrensj@mit.edu>"]
+
+[dependencies]

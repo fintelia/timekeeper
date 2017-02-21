@@ -2,73 +2,106 @@
 use std::collections::HashMap;
 use std::cmp::Eq;
 use std::hash::Hash;
-use std::ops::Index;
 
-use std::time;
-
-use Timer;
+use Tracker;
+use Source;
 
 /// A timer set tracks a collection of timers, of which at most one can be
 /// running at any given time.
-pub struct TimerSet<Key: Eq + Hash + Clone, T: Timer + Default> {
-    timers: HashMap<Key, T>,
-    current: Option<Key>
+pub struct TimerSet<Key: Eq + Hash + Clone, T: Tracker, S: Source> {
+    trackers: HashMap<Key, T>,
+    source: S,
+
+    current: Option<(Key, u64)>,
 }
 
-impl <Key: Eq + Hash + Clone, T: Timer + Default> TimerSet<Key, T> {
+impl <Key, T, S> TimerSet<Key, T, S> where Key: Eq + Hash + Clone, T: Tracker, S: Source {
     /// Create a new TimerSet with no currently running timer.
     pub fn new() -> Self {
         Self {
-            timers: HashMap::new(),
+            trackers: HashMap::new(),
+            source: S::default(),
             current: None,
         }
     }
 
     /// Starts a specific timer, stopping the currently running timer (if any).
     pub fn start(&mut self, k: Key) {
-        let now = time::Instant::now();
+        let now = self.source.get_time();
 
-        if let Some(ref k) = self.current {
-            self.timers.get_mut(k).unwrap().stop_at(now);
+        if let Some((ref k, t)) = self.current {
+            self.trackers.get_mut(&k).unwrap().record(now - t);
         }
 
-        self.current = Some(k.clone());
-        self.timers.entry(k).or_insert_with(T::default).start_at(now);
+        self.current = Some((k.clone(), now));
+        self.trackers.entry(k).or_insert_with(T::default);
     }
 
     /// Stops the currently running timer without starting any others.
     pub fn stop(&mut self) {
-        if let Some(ref k) = self.current {
-            self.timers.get_mut(k).unwrap().stop();
+        if let Some((ref k, t)) = self.current {
+            self.trackers.get_mut(&k).unwrap().record(self.source.get_time() - t);
         }
         self.current = None;
     }
 
-    /// Get a reference to timer k.
-    pub fn get(&self, k: &Key) -> Option<&T> {
-        self.timers.get(k)
+    pub fn get_stats(&self, k: Key) -> Option<T::Statistics> {
+        let now = match self.current {
+            Some((ref current, t)) if *current == k => Some(self.source.get_time() - t),
+            _ => None,
+        };
+
+        self.trackers.get(&k).map(|t| t.get_stats(now))
     }
-}
 
-impl<Key: Eq + Hash + Clone, T: Timer + Default> Index<Key> for TimerSet<Key, T> {
-    type Output = T;
+    /// Returns the elapsed time in nanoseconds.
+    pub fn num_nanoseconds(&self, k: Key) -> Option<u64> {
+        let now = match self.current {
+            Some((ref current, t)) if *current == k => Some(self.source.get_time() - t),
+            _ => None,
+        };
 
-    fn index(&self, k: Key) -> &T {
-        self.timers.get(&k).expect("Attempted to get timer that doesn't exist")
+        self.trackers.get(&k).map(|t| t.get(now))
+    }
+
+    /// Returns the elapsed time in microseconds.
+    pub fn num_microseconds(&self, k: Key) -> Option<u64> {
+        self.num_nanoseconds(k).map(|t| t / 1000)
+    }
+
+    /// Return the elapsed time in milliseconds.
+    pub fn num_milliseconds(&self, k: Key) -> Option<u64> {
+        self.num_nanoseconds(k).map(|t| t / 1000_000)
+    }
+
+    /// Returns the elapsed time in seconds.
+    pub fn num_seconds(&self, k: Key) -> Option<u64> {
+        self.num_nanoseconds(k).map(|t| t / 1000_000_000)
+    }
+
+    /// Returns the elapsed time in minutes.
+    pub fn num_minutes(&self, k: Key) -> Option<u64> {
+        self.num_nanoseconds(k).map(|t| t / 60_000_000_000)
+    }
+
+    /// Returns the elapsed time in hours.
+    pub fn num_hours(&self, k: Key) -> Option<u64> {
+        self.num_nanoseconds(k).map(|t| t / 3600_000_000_000)
     }
 }
 
 #[test]
 fn it_works() {
-    use simpletimer::SimpleTimer;
+    use SimpleTracker;
+    use RealTime;
 
-    let mut ts = TimerSet::<i32, SimpleTimer>::new();
+    let mut ts = TimerSet::<i32, SimpleTracker, RealTime>::new();
 
     ts.start(1);
     ts.start(2);
     ts.stop();
 
-    assert!(ts[1].num_nanoseconds() > 0);
-    assert!(ts[2].num_nanoseconds() > 0);
-    assert!(ts.get(&3).is_none());
+    assert!(ts.num_nanoseconds(1).unwrap() > 0);
+    assert!(ts.num_nanoseconds(2).unwrap() > 0);
+    assert!(ts.num_nanoseconds(3).is_none());
 }

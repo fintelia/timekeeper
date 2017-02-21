@@ -1,70 +1,87 @@
 //! Timekeeper is a simple library to track the amount of time used by different
 //! parts of a program.
 
-use std::time;
+#![feature(associated_type_defaults)]
 
-mod simpletimer;
+mod simpletracker;
+mod source;
 mod timerset;
 
-pub use simpletimer::SimpleTimer;
-pub use timerset::TimerSet;
+pub use simpletracker::SimpleTracker;
+pub use source::*;
+pub use timerset::*;
 
-pub trait Timer {
-    /// Start timing from a specific instant. Panics if the timer is already running.
-    fn start_at(&mut self, instant: time::Instant);
+pub trait Tracker: Default {
+    type Statistics;
 
-    // Stop timing at a specific instant. Panics if the timer is not currently running.
-    fn stop_at(&mut self, instant: time::Instant);
+    fn record(&mut self, time: u64);
+    fn get_stats(&self, partial_time: Option<u64>) -> Self::Statistics;
+    fn get(&self, partial_time: Option<u64>) -> u64;
+}
+
+pub trait Source: Default {
+    fn get_time(&self) -> u64;
+}
+
+pub struct Timer<T: Tracker, S: Source> {
+    tracker: T,
+    source: S,
+    last: Option<u64>,
+}
+
+impl<T: Tracker, S: Source> Timer<T, S> {
+    /// Create a new Timer.
+    pub fn new() -> Self {
+        Self {
+            tracker: T::default(),
+            source: S::default(),
+            last: None,
+        }
+    }
 
     /// Start timing. Panics if the timer is already running.
-    fn start(&mut self) {
-        self.start_at(time::Instant::now())
+    pub fn start(&mut self) {
+        assert!(self.last.is_none(), "cannot start running timer");
+        self.last = Some(self.source.get_time());
     }
 
     /// Stop timing. Panics if the timer is not currently running.
-    fn stop(&mut self) {
-        self.stop_at(time::Instant::now())
+    pub fn stop(&mut self) {
+        let time = self.source.get_time() - self.last.take().expect("cannot stop paused timer");
+        self.tracker.record(time);
     }
 
-    /// Get the elapsed time of this timer.
-    fn get(&self) -> time::Duration;
-
-    /// Same as `get()` but returns the elapsed time as a number of nanoseconds
-    /// instead of a Duration. Panics on overflow.
-    fn num_nanoseconds(&self) -> u64 {
-        let dur = self.get();
-        dur.as_secs().checked_mul(1000_000_000).unwrap() + (dur.subsec_nanos() as u64)
+    pub fn get_stats(&self) -> T::Statistics {
+        self.tracker.get_stats(self.last.map(|l| self.source.get_time() - l))
     }
 
-    /// Same as `get()` but returns the elapsed time as a number of microseconds
-    /// instead of a Duration. Panics on overflow.
-    fn num_microseconds(&self) -> u64 {
-        let dur = self.get();
-        dur.as_secs().checked_mul(1000_000).unwrap() + (dur.subsec_nanos() as u64 / 1000)
+    /// Returns the elapsed time in nanoseconds.
+    pub fn num_nanoseconds(&self) -> u64 {
+        self.tracker.get(self.last.map(|l| self.source.get_time() - l))
     }
 
-    /// Same as `get()` but returns the elapsed time as a number of milliseconds
-    /// instead of a Duration. Panics on overflow.
-    fn num_milliseconds(&self) -> u64 {
-        let dur = self.get();
-        dur.as_secs().checked_mul(1000).unwrap() + (dur.subsec_nanos() as u64 / 1000_000)
+    /// Returns the elapsed time in microseconds.
+    pub fn num_microseconds(&self) -> u64 {
+        self.num_nanoseconds() / 1000
     }
 
-    /// Same as `get()` but returns the elapsed time as a number of seconds
-    /// instead of a Duration.
-    fn num_seconds(&self) -> u64 {
-        self.get().as_secs()
+    /// Return the elapsed time in milliseconds.
+    pub fn num_milliseconds(&self) -> u64 {
+        self.num_nanoseconds() / 1000_000
     }
 
-    /// Same as `get()` but returns the elapsed time as a number of minutes
-    /// instead of a Duration.
-    fn num_minutes(&self) -> u64 {
-        self.get().as_secs() / 60
+    /// Returns the elapsed time in seconds.
+    pub fn num_seconds(&self) -> u64 {
+        self.num_nanoseconds() / 1000_000_000
     }
 
-    /// Same as `get()` but returns the elapsed time as a number of hours
-    /// instead of a Duration.
-    fn num_hours(&self) -> u64 {
-        self.get().as_secs() / 3600
+    /// Returns the elapsed time in minutes.
+    pub fn num_minutes(&self) -> u64 {
+        self.num_nanoseconds() / 60_000_000_000
+    }
+
+    /// Returns the elapsed time in hours.
+    pub fn num_hours(&self) -> u64 {
+        self.num_nanoseconds() / 3600_000_000_000
     }
 }

@@ -30,4 +30,18 @@ impl Tracker for SimpleTracker {
 }
 
 #[test]
-fn it_works() {}
+fn it_works() {
+    let mut tracker = SimpleTracker::default();
+
+    tracker.record(10);
+    tracker.record(12);
+    tracker.record(0);
+
+    assert_eq!(tracker.get(Some(5)), 27);
+    assert_eq!(tracker.get(None), 22);
+
+    tracker.record(18);
+
+    assert_eq!(tracker.get(None), 40);
+    assert_eq!(tracker.get_stats(None), 40);
+}

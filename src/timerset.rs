@@ -8,6 +8,7 @@ use Source;
 
 /// A timer set tracks a collection of timers, of which at most one can be
 /// running at any given time.
+#[cfg(not(feature = "disable_timekeeper"))]
 pub struct TimerSet<Key: Eq + Hash + Clone, T: Tracker, S: Source> {
     trackers: HashMap<Key, T>,
     source: S,
@@ -15,6 +16,7 @@ pub struct TimerSet<Key: Eq + Hash + Clone, T: Tracker, S: Source> {
     current: Option<(Key, u64)>,
 }
 
+#[cfg(not(feature = "disable_timekeeper"))]
 impl <Key, T, S> TimerSet<Key, T, S> where Key: Eq + Hash + Clone, T: Tracker, S: Source {
     /// Create a new TimerSet with no currently running timer.
     pub fn new() -> Self {

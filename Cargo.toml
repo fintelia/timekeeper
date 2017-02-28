@@ -1,9 +1,12 @@
 [package]
 name = "timekeeper"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Jonathan Behrens <fintelia@gmail.com>"]
 description = "A simple library to track how much time is used in different parts of a program"
 repository = "https://github.com/fintelia/timekeeper"
 license = "MIT/Apache-2.0"
 
 [dependencies]
+
+[features]
+disable_timekeeper = []

@@ -60,8 +60,15 @@ fn clock_gettime(clock: libc::c_int) -> Result<libc::timespec, ()> {
 #[derive(Default)]
 pub struct ProcessTime;
 impl Source for ProcessTime {
+    #[cfg(target_os = "linux")]
     fn get_time(&self) -> u64 {
         let time = clock_gettime(libc::CLOCK_PROCESS_CPUTIME_ID).unwrap();
+        (time.tv_sec as u64) * 1000_000_000 + (time.tv_nsec as u64)
+    }
+
+    #[cfg(target_os = "macos")]
+    fn get_time(&self) -> u64 {
+        let time = clock_gettime(0).unwrap();
         (time.tv_sec as u64) * 1000_000_000 + (time.tv_nsec as u64)
     }
 }
@@ -69,8 +76,15 @@ impl Source for ProcessTime {
 #[derive(Default)]
 pub struct ThreadTime;
 impl Source for ThreadTime {
+    #[cfg(target_os = "linux")]
     fn get_time(&self) -> u64 {
         let time = clock_gettime(libc::CLOCK_THREAD_CPUTIME_ID).unwrap();
+        (time.tv_sec as u64) * 1000_000_000 + (time.tv_nsec as u64)
+    }
+
+    #[cfg(target_os = "macos")]
+    fn get_time(&self) -> u64 {
+        let time = clock_gettime(0).unwrap();
         (time.tv_sec as u64) * 1000_000_000 + (time.tv_nsec as u64)
     }
 }

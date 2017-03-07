@@ -23,21 +23,38 @@ impl Source for RealTime {
 }
 
 use libc;
+
+#[cfg(target_os = "linux")]
 fn clock_gettime(clock: libc::c_int) -> Result<libc::timespec, ()> {
     let mut tp: libc::timespec = libc::timespec {
         tv_sec: 0,
         tv_nsec: 0,
     };
 
-    let ret = unsafe {
-        libc::clock_gettime(clock, &mut tp)
+    let ret = unsafe { libc::clock_gettime(clock, &mut tp) };
+
+    if ret == 0 { Ok(tp) } else { Err(()) }
+}
+
+#[cfg(target_os = "macos")]
+fn clock_gettime(clock: libc::c_int) -> Result<libc::timespec, ()> {
+    let mut tp: libc::timespec = libc::timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
     };
 
-    if ret == 0 {
-        Ok(tp)
-    } else {
-        Err(())
-    }
+    //let tb = libc::mach_timebase_info_data_t {
+    //    numer: 0,
+    //    denom: 0,
+    //};
+
+    //let ret = unsafe {
+    //    libc::mach_timebase_info(&tb);
+    //    libc::mach_absolute_time()
+    //};
+
+    //if ret == 0 { Ok(tp) } else { Err(()) }
+    Ok(tp)
 }
 
 #[derive(Default)]

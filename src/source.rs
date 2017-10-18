@@ -23,7 +23,7 @@ impl Source for RealTime {
 }
 
 use libc;
-fn clock_gettime(clock: libc::c_int) -> Result<libc::timespec, ()> {
+fn clock_gettime(clock: libc::clockid_t) -> Result<libc::timespec, ()> {
     let mut tp: libc::timespec = libc::timespec {
         tv_sec: 0,
         tv_nsec: 0,

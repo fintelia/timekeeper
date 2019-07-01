@@ -30,6 +30,11 @@ impl<T: Tracker, S: Source> Timer<T, S> {
         self.tracker.record(time);
     }
 
+    /// Returns whether the timer is currently running.
+    pub fn is_running(&self) -> bool {
+        self.last.is_some()
+    }
+
     pub fn get_stats(&self) -> T::Statistics {
         self.tracker.get_stats(self.last.map(|l| self.source.get_time() - l))
     }

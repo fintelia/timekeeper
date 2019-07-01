@@ -20,6 +20,9 @@ impl<T: Tracker, S: Source> Timer<T, S> {
 
     pub fn start(&mut self) {}
     pub fn stop(&mut self) {}
+    pub fn is_running(&self) -> bool {
+        false
+    }
     pub fn get_stats(&self) -> T::Statistics {
         T::Statistics::default()
     }

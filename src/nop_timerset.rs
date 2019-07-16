@@ -23,6 +23,9 @@ impl <Key, T, S> TimerSet<Key, T, S> where Key: Eq + Hash + Clone, T: Tracker, S
 
     pub fn start(&mut self, _: Key) {}
     pub fn stop(&mut self) {}
+    pub fn is_running(&self) -> bool {
+        false
+    }
     pub fn get_stats(&self, _: Key) -> Option<T::Statistics> {
         Some(T::Statistics::default())
     }

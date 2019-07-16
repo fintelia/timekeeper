@@ -47,6 +47,11 @@ impl <Key, T, S> TimerSet<Key, T, S> where Key: Eq + Hash + Clone, T: Tracker, S
         self.current = None;
     }
 
+    /// Returns whether the timer is currently running.
+    pub fn is_running(&self) -> bool {
+        self.current.is_some()
+    }
+
     pub fn get_stats(&self, k: Key) -> Option<T::Statistics> {
         let now = match self.current {
             Some((ref current, t)) if *current == k => Some(self.source.get_time() - t),

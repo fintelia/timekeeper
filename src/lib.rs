@@ -1,7 +1,6 @@
 //! Timekeeper is a simple library to track the amount of time used by different
 //! parts of a program.
 
-#![feature(libc)]
 extern crate libc;
 
 mod simpletracker;

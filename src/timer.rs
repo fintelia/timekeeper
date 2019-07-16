@@ -1,6 +1,6 @@
 
-use Source;
-use Tracker;
+use crate::Source;
+use crate::Tracker;
 
 pub struct Timer<T: Tracker, S: Source> {
     tracker: T,

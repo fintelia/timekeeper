@@ -1,5 +1,5 @@
 
-use Tracker;
+use crate::Tracker;
 
 pub struct SimpleTracker {
     elapsed: u64,

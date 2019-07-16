@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use std::cmp::Eq;
 use std::hash::Hash;
 
-use Tracker;
-use Source;
+use crate::Tracker;
+use crate::Source;
 
 /// A timer set tracks a collection of timers, of which at most one can be
 /// running at any given time.
@@ -94,8 +94,8 @@ impl <Key, T, S> TimerSet<Key, T, S> where Key: Eq + Hash + Clone, T: Tracker, S
 
 #[test]
 fn it_works() {
-    use SimpleTracker;
-    use RealTime;
+    use crate::SimpleTracker;
+    use crate::RealTime;
 
     let mut ts = TimerSet::<i32, SimpleTracker, RealTime>::new();
 

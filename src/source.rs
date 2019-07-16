@@ -10,7 +10,7 @@ use source::winapi::{
 
 use std::time;
 
-use Source;
+use crate::Source;
 
 pub struct RealTime {
     start: time::Instant,

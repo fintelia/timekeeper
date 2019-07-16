@@ -4,4 +4,6 @@ os:
   - osx
   - windows
 rust:
+  - stable
+  - beta
   - nightly

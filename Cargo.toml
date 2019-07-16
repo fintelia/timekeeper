@@ -4,9 +4,9 @@ description = "A simple library to track how much time is used in different part
 license = "MIT/Apache-2.0"
 name = "timekeeper"
 repository = "https://github.com/fintelia/timekeeper"
-version = "0.3.1"
+version = "0.3.2"
 [dependencies]
-libc = "*"
+libc = "0.2.60"
 
 [features]
 default = ["enable_timekeeper"]

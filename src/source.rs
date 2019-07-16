@@ -1,4 +1,13 @@
 
+#[cfg(target_os = "windows")]
+extern crate winapi;
+
+#[cfg(target_os = "windows")]
+use source::winapi::{
+    um::processthreadsapi::{GetCurrentProcess, GetCurrentThread, GetProcessTimes, GetThreadTimes},
+    shared::minwindef::FILETIME,
+};
+
 use std::time;
 
 use Source;
@@ -22,7 +31,9 @@ impl Source for RealTime {
     }
 }
 
+#[cfg(not(target_os = "windows"))]
 use libc;
+#[cfg(not(target_os = "windows"))]
 fn clock_gettime(clock: libc::clockid_t) -> Result<libc::timespec, ()> {
     let mut tp: libc::timespec = libc::timespec {
         tv_sec: 0,
@@ -43,18 +54,46 @@ fn clock_gettime(clock: libc::clockid_t) -> Result<libc::timespec, ()> {
 #[derive(Default)]
 pub struct ProcessTime;
 impl Source for ProcessTime {
+    #[cfg(not(target_os = "windows"))]
     fn get_time(&self) -> u64 {
         let time = clock_gettime(libc::CLOCK_PROCESS_CPUTIME_ID).unwrap();
         (time.tv_sec as u64) * 1000_000_000 + (time.tv_nsec as u64)
+    }
+
+    #[cfg(target_os = "windows")]
+    fn get_time(&self) -> u64 {
+
+        let mut t_create = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        let mut t_exit = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        let mut t_kernel = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        let mut t_user = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+
+        unsafe { GetProcessTimes(GetCurrentProcess(), &mut t_create, &mut t_exit, &mut t_kernel, &mut t_user) };
+
+        (((t_user.dwHighDateTime as u64) << 32) + (t_user.dwLowDateTime as u64)) * 100
     }
 }
 
 #[derive(Default)]
 pub struct ThreadTime;
 impl Source for ThreadTime {
+    #[cfg(not(target_os = "windows"))]
     fn get_time(&self) -> u64 {
         let time = clock_gettime(libc::CLOCK_THREAD_CPUTIME_ID).unwrap();
         (time.tv_sec as u64) * 1000_000_000 + (time.tv_nsec as u64)
+    }
+
+    #[cfg(target_os = "windows")]
+    fn get_time(&self) -> u64 {
+
+        let mut t_create = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        let mut t_exit = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        let mut t_kernel = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+        let mut t_user = FILETIME { dwLowDateTime: 0, dwHighDateTime: 0 };
+
+        unsafe { GetThreadTimes(GetCurrentThread(), &mut t_create, &mut t_exit, &mut t_kernel, &mut t_user) };
+
+        (((t_user.dwHighDateTime as u64) << 32) + (t_user.dwLowDateTime as u64)) * 100
     }
 }
 
@@ -80,7 +119,7 @@ fn it_works() {
     let source = ProcessTime::default();
     let r1 = realtime.get_time();
     let t1 = source.get_time();
-    do_work(1000000);
+    do_work(10000000);
     let t2 = source.get_time();
     let r2 = realtime.get_time();
     assert!(t2 > t1);
@@ -91,7 +130,7 @@ fn it_works() {
     let source = ThreadTime::default();
     let r1 = realtime.get_time();
     let t1 = source.get_time();
-    do_work(10000000);
+    do_work(100000000);
     let t2 = source.get_time();
     let r2 = realtime.get_time();
     assert!(t2 > t1);
